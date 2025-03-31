@@ -1,0 +1,3 @@
+#Adicionar usuarios em determinados grupos do Exchange Online, de um arquivo .CSV
+
+Import-Csv C:\temp\pasta3.csv | foreach{Add-DistributionGroupMember -Identity geral@exemplo.com.br -Member $_.upn}
