@@ -1,0 +1,28 @@
+# Exporta em .csv caixas de e-mail acima de 90% de uso
+
+# Autenticar no Exchange Online
+Connect-ExchangeOnline -userprincipal name test@exemplo.com.br
+
+# Definir o domínio que será filtrado
+$dominio = "seudominio.com"
+
+# Buscar caixas de e-mail com mais de 90% de uso
+$mailboxes = Get-Mailbox -ResultSize Unlimited | Where-Object {$_.PrimarySmtpAddress -like "*@$dominio"} |
+    ForEach-Object {
+        $stats = Get-MailboxStatistics -Identity $_.PrimarySmtpAddress
+        if ($stats.StorageLimitStatus -eq "AboveLimit") {
+            [PSCustomObject]@{
+                DisplayName   = $_.DisplayName
+                EmailAddress  = $_.PrimarySmtpAddress
+                UsagePercentage = ($stats.TotalItemSize.Value.ToGB() / $_.ProhibitSendQuota.Value.ToGB()) * 100
+                TotalSize     = $stats.TotalItemSize.Value.ToGB()
+                Quota         = $_.ProhibitSendQuota.Value.ToGB()
+            }
+        }
+    }
+
+# Exportar os dados para um arquivo CSV
+$mailboxes | Export-Csv -Path "C:\Temp\CaixasAcimaDe90Porcento.csv" -NoTypeInformation -Encoding UTF8
+
+Write-Host "Relatório gerado com sucesso em C:\Temp\CaixasAcimaDe90Porcento.csv"
+
